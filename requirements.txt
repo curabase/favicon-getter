@@ -1,0 +1,13 @@
+beautifulsoup4==4.4.1
+bs4==0.0.1
+Flask==0.10.1
+gunicorn==19.4.5
+html5lib==0.9999999
+itsdangerous==0.24
+Jinja2==2.8
+MarkupSafe==0.23
+Pillow==3.1.1
+python-magic==0.4.10
+requests==2.9.1
+six==1.10.0
+Werkzeug==0.11.4
