@@ -42,3 +42,8 @@ This is a really simple app to get started with.
 
 You should be able to deploy using many methods. Personally, I use a home-grown
 'push-to-deploy' -- kind of like Heroku.
+
+# Other favicon grabbers
+
+  - (pyfav)[https://github.com/phillipsm/pyfav] (a simple Python library that helps you get a favicon for a supplied URL.)
+  - (besticon)[https://github.com/mat/besticon] (A favicon service written in Go https://icons.better-idea.org)
