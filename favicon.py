@@ -20,14 +20,19 @@ def grab_favicon():
 
     domain = domain.split('?')[0].split('/')[0]
 
+
+    filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
+
+    # if the file exists, the just return it now
+    if os.path.isfile(filename):
+        return send_file(filename, mimetype='image/png', conditional=True)
+
     # resolve DNS on domain
     try:
         socket.gethostbyname(domain)
     except socket.error:
         favicon = 'missing' if favicon is None else favicon
 
-    # TODO: check that file exists on file system
-    filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
 
     # if favicon location was not set from the url params, the we 
     # must hunt for it
@@ -37,7 +42,7 @@ def grab_favicon():
     img = download_or_create_favicon(favicon, domain)
     img.save(filename)
 
-    return send_file(filename, mimetype='image/png')
+    return send_file(filename, mimetype='image/png', conditional=True)
 
 
     
