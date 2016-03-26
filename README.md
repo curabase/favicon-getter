@@ -22,8 +22,9 @@ There is only one endpoint. favgetter.com/?domain=example.com
 ## Parameters
 
   - domain: the domain name (eg - facebook.com)
-  - refresh: if present in the param string, it will force the server to refresh 
-  the icon
+  - favicon: this is a full path url (eg - http://example.com/favicon.ico) to
+    an alternative favicon. This is useful if you absolutely cannot get the script
+    to find the right favicon. 
 
 To refresh a domain: `curl http://localhost:5000/?domain=facebook.com&refresh=true`
 

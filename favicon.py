@@ -13,7 +13,7 @@ MEDIA_ROOT='{}/icons'.format(os.path.dirname(os.path.realpath(__file__)))
 @app.route("/")
 def grab_favicon():
     domain  = request.args.get('domain', None)
-    refresh = request.args.get('refresh', None)
+    favicon = request.args.get('favicon', None)
 
     if domain is None:
         return 'No domain given'
@@ -24,14 +24,18 @@ def grab_favicon():
     try:
         socket.gethostbyname(domain)
     except socket.error:
-        return 'DNS or other network error for {}'.format(domain)
+        favicon = 'missing' if favicon is None else favicon
 
     # TODO: check that file exists on file system
     filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
-    if not os.path.isfile(filename) or refresh:
+
+    # if favicon location was not set from the url params, the we 
+    # must hunt for it
+    if favicon is None:
         favicon = get_favicon(domain)
-        img = download_or_create_favicon(favicon, domain)
-        img.save(filename)
+
+    img = download_or_create_favicon(favicon, domain)
+    img.save(filename)
 
     return send_file(filename, mimetype='image/png')
 
