@@ -8,69 +8,85 @@ from io import BytesIO
 import magic
 import os
 import uuid
+import re
 
 # TODO: convert this into a class
 # TODO: Need to handle favicons that use data: urls like this guy: http://ajf.me/
+# TODO: Need to handle DNS errors and retry on www.
+# TODO: check a random page to force a 404. Then try to pull favicon from here
+#        heb.com is trying to block bots using JS on their homepage
+
+HEADERS = {
+    'User-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
+}
+TIMEOUT = 30
+
+def common_locations(domain):
+    extensions = ['ico','png','gif','jpg','jpeg']
+    schemes    = ['http', 'https']
+    subdomains = ['www.','']
+    
+    locations = []
+
+    # check in 20 possible places 
+    # this is probably a bit excessive
+    for ext in extensions:
+        for scheme in schemes:
+            for subdomain in subdomains:
+                url = '{}://{}{}/favicon.{}'.format(scheme,subdomain,domain,ext)
+                locations.append(url)
+
+    return locations
+
 
 def download_or_create_favicon(favicon, domain):
+    generic_favicon = os.path.dirname(os.path.realpath(__file__)) + '/generic_favicon.png'
     if favicon == 'missing':
-        return make_image(domain)
+        return Image.open(generic_favicon).resize((32, 32))
+        #return make_image(domain)
+    
 
-    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
-    headers = {'User-agent': user_agent}
-    r = requests.get(favicon, timeout=3, headers=headers)
+    r = requests.get(favicon, timeout=TIMEOUT, headers=HEADERS)
 
     # response and that the file exists and is not empty
     if (r.status_code == requests.codes.ok) and (len(r.text) > 0):
         return Image.open(BytesIO(r.content)).resize((32, 32))
     else:
-        return make_image(domain)
+        return Image.open(generic_favicon).resize((32, 32))
+        #return make_image(domain)
 
 
 def get_favicon(domain, html=None):
 
+    # TODO: check DNS / check DNS on www.
+
     base_url = 'http://{}'.format(domain)
-
-    extensions = ['ico','png','gif','jpg','jpeg']
-    schemes    = ['http', 'https']
-    subdomains = ['www.','']
-    
-    common_locations = []
-
-    # check in 20 possible places 
-    for ext in extensions:
-        for scheme in schemes:
-            for subdomain in subdomains:
-                url = '{}://{}{}/favicon.{}'.format(scheme,subdomain,domain,ext)
-                common_locations.append(url)
-                if poke_url(url):
-                    return url
-
 
     if html is None:
         try:
 
             # set the user agent to fool economist.com and other sites who care...
-            user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
-            headers = {'User-agent': user_agent}
-            r = requests.get(base_url, timeout=3, headers=headers)
+            r = requests.get(base_url, timeout=TIMEOUT, headers=HEADERS)
             html = r.text
 
             # if we were redirected off the domain, then we catch it here
             new_domain_parts = urlparse(r.url)
-            new_domain = new_domain_parts.netloc.lstrip('www.')
+            new_domain = re.sub('^www\.','',new_domain_parts.netloc)
 
             # now we just re-check favicons on the new domain
             if domain != new_domain:
-                for o in common_locations:
-                    url = o.replace(domain,new_domain)
-                    if poke_url(url):
-                        return url
+                return get_favicon(new_domain)
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             pass
 
+
     favicon = find_in_html(html,base_url)
+    if favicon == 'missing':
+        for url in common_locations(domain):
+            print('trying %s' % url)
+            if poke_url(url):
+                return url
 
     return favicon
 
@@ -111,9 +127,7 @@ def poke_url(url, recursions=0):
 
     try:
         # need to set headers here to fool sites like cafepress.com...
-        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
-        headers = {'User-agent': user_agent}
-        h = requests.get(url, allow_redirects=False, timeout=3, headers=headers)
+        h = requests.get(url, allow_redirects=False, timeout=TIMEOUT, headers=HEADERS)
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
         return result
 
@@ -124,20 +138,13 @@ def poke_url(url, recursions=0):
         f.close()
 
         the_magic = magic.from_file(fname)
-        if b"icon" in the_magic:
+
+        if any([m in the_magic for m in [b'icon',b'PNG',b'GIF',b'JPEG']]):
             result = h.url
 
-        if b"PNG" in the_magic:
-            # TODO: detect if all pixels are white or transparent
-            # http://stackoverflow.com/a/1963146/1646663
-            # http://stackoverflow.com/a/14041871/1646663
-            result = h.url
-
-        if b"GIF" in the_magic:
-            # TODO: detect if all pixels are white or transparent
-            # http://stackoverflow.com/a/1963146/1646663
-            # http://stackoverflow.com/a/14041871/1646663
-            result = h.url
+        # TODO: detect if all pixels are white or transparent
+        # http://stackoverflow.com/a/1963146/1646663
+        # http://stackoverflow.com/a/14041871/1646663
 
         os.remove(fname)
 
