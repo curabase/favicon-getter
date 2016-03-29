@@ -78,7 +78,7 @@ def get_favicon(domain, html=None):
                 return get_favicon(new_domain)
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-            pass
+            return 'missing'
 
 
     favicon = find_in_html(html,base_url)
