@@ -29,7 +29,7 @@ def grab_favicon():
 
     # resolve DNS on domain
     try:
-        socket.gethostbyname(domain)
+        socket.create_connection((domain, 80), 5)
     except socket.error:
         favicon = 'missing' if favicon is None else favicon
 

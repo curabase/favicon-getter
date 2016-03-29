@@ -1,3 +1,4 @@
 icons/*.png
 *.pyc
 __pycache__/
+.idea/
