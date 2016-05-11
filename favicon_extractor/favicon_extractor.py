@@ -19,7 +19,7 @@ import re
 HEADERS = {
     'User-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
 }
-TIMEOUT = 30
+TIMEOUT = 3
 
 def common_locations(domain):
     extensions = ['ico','png','gif','jpg','jpeg']
