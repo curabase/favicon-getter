@@ -3,3 +3,4 @@ icons/*.png
 __pycache__/
 .idea/
 venv/
+icons/*
