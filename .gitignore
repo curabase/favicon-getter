@@ -1,6 +1,6 @@
-icons/*.png
 *.pyc
 __pycache__/
 .idea/
 venv/
-icons/*
+icons/
+.DS_Store/
