@@ -16,7 +16,14 @@ build:
 
 .PHONY: run
 run:
-	docker run -it --rm -v $$PWD/src:/usr/src/app -w /usr/src/app -p 5000:5000 $(IMAGE_NAME) $(CMD)
+	mkdir -p icons
+	docker run -it --rm \
+		-v $$PWD/icons:/icons \
+		-v $$PWD/src:/usr/src/app \
+		-w /usr/src/app \
+		-p 5000:5000 \
+		-e DEBUG=True \
+		$(IMAGE_NAME) $(CMD)
 
 
 .PHONY: test

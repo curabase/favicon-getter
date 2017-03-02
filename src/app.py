@@ -1,25 +1,27 @@
 from flask import Flask, send_file, request
 
-from favicon_extractor.favicon_extractor import get_favicon, download_or_create_favicon
+from favicon_extractor.favicon_extractor import \
+    get_favicon, \
+    download_or_create_favicon
 
 import socket
 import os
 
 app = Flask(__name__)
 
-MEDIA_ROOT='{}/icons'.format(os.path.dirname(os.path.realpath(__file__)))
+MEDIA_ROOT = '/icons'
 
 
 @app.route("/")
 def grab_favicon():
-    domain  = request.args.get('domain', None)
+
+    domain = request.args.get('domain', None)
     favicon = request.args.get('favicon', None)
 
     if domain is None:
         return 'No domain given'
 
     domain = domain.split('?')[0].split('/')[0]
-
 
     filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
 
@@ -33,9 +35,8 @@ def grab_favicon():
     except socket.error:
         favicon = 'missing' if favicon is None else favicon
 
-
-    # if favicon location was not set from the url params, the we 
-    # must hunt for it
+    # if favicon location was not set from the url params,
+    # the we must hunt for it
     if favicon is None:
         favicon = get_favicon(domain)
 
@@ -45,10 +46,8 @@ def grab_favicon():
     return send_file(filename, mimetype='image/png', conditional=True)
 
 
-    
-
-
 if __name__ == "__main__":
-    app.debug = True
-    app.run()
-
+    debug = os.getenv('DEBUG', False)
+    if type(debug) == str:
+        debug = debug.lower() in ['1', 'yes', 'true']
+    app.run(host='0.0.0.0', debug=debug)
