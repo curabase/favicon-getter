@@ -46,5 +46,5 @@ You should be able to deploy using many methods. Personally, I use a home-grown
 
 # Other favicon grabbers
 
-  - (pyfav)[https://github.com/phillipsm/pyfav] (a simple Python library that helps you get a favicon for a supplied URL.)
-  - (besticon)[https://github.com/mat/besticon] (A favicon service written in Go https://icons.better-idea.org)
+  - [pyfav](https://github.com/phillipsm/pyfav): a simple Python library that helps you get a favicon for a supplied URL.
+  - [besticon](https://github.com/mat/besticon): A favicon service written in Go https://icons.better-idea.org
