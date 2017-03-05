@@ -10,42 +10,51 @@ import os
 import uuid
 import re
 
-# TODO: convert this into a class
-# TODO: Need to handle favicons that use data: urls like this guy: http://ajf.me/
-# TODO: Need to handle DNS errors and retry on www.
-# TODO: check a random page to force a 404. Then try to pull favicon from here
-#        heb.com is trying to block bots using JS on their homepage
-
+"""
+TODO: convert this into a class
+TODO: Need to handle favicons that use data: urls like
+      this guy: http://ajf.me/
+TODO: Need to handle DNS errors and retry on www.
+TODO: check a random page to force a 404. Then try to pull favicon from here
+      heb.com is trying to block bots using JS on their homepage
+"""
 HEADERS = {
-    'User-agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36"
+    'User-agent': ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/48.0.2564.103 Safari/537.36")
 }
 TIMEOUT = 2
 
+
 def common_locations(domain):
-    #extensions = ['ico','png','gif','jpg','jpeg']
+    # extensions = ['ico','png','gif','jpg','jpeg']
     extensions = ['ico']
-    schemes    = ['http', 'https']
-    subdomains = ['www.','']
-    
+    schemes = ['http', 'https']
+    subdomains = ['www.', '']
+
     locations = []
 
-    # check in 20 possible places 
+    # check in 20 possible places
     # this is probably a bit excessive
     for ext in extensions:
         for scheme in schemes:
             for subdomain in subdomains:
-                url = '{}://{}{}/favicon.{}'.format(scheme,subdomain,domain,ext)
+                url = '{}://{}{}/favicon.{}'.format(
+                                                scheme,
+                                                subdomain,
+                                                domain, ext)
                 locations.append(url)
 
     return locations
 
 
 def download_or_create_favicon(favicon, domain):
-    generic_favicon = os.path.dirname(os.path.realpath(__file__)) + '/generic_favicon.png'
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    generic_favicon = "{}/generic_favicon.png".format(file_path)
+
     if favicon == 'missing':
         return Image.open(generic_favicon).resize((32, 32))
-        #return make_image(domain)
-    
+        # return make_image(domain)
 
     r = requests.get(favicon, timeout=TIMEOUT, headers=HEADERS)
 
@@ -54,7 +63,7 @@ def download_or_create_favicon(favicon, domain):
         return Image.open(BytesIO(r.content)).resize((32, 32))
     else:
         return Image.open(generic_favicon).resize((32, 32))
-        #return make_image(domain)
+        # return make_image(domain)
 
 
 def get_favicon(domain, html=None):
@@ -66,23 +75,24 @@ def get_favicon(domain, html=None):
     if html is None:
         try:
 
-            # set the user agent to fool economist.com and other sites who care...
+            # set the user agent to fool economist.com and other sites
+            # who care...
             r = requests.get(base_url, timeout=TIMEOUT, headers=HEADERS)
             html = r.text
 
             # if we were redirected off the domain, then we catch it here
             new_domain_parts = urlparse(r.url)
-            new_domain = re.sub('^www\.','',new_domain_parts.netloc)
+            new_domain = re.sub('^www\.', '', new_domain_parts.netloc)
 
             # now we just re-check favicons on the new domain
             if domain != new_domain:
                 return get_favicon(new_domain)
 
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
             return 'missing'
 
-
-    favicon = find_in_html(html,base_url)
+    favicon = find_in_html(html, base_url)
     if favicon == 'missing':
         for url in common_locations(domain):
             print('trying %s' % url)
@@ -103,7 +113,8 @@ def find_in_html(html, base_url):
             favicon = calc_href(href, base_url)
 
     elif soup.find("link", rel="icon"):
-        # this fuckin' line -- it filters out all .svg hrefs and returns the first sane one
+        # this line -- it filters out all .svg hrefs and returns the
+        # first sane one
         href = [l.get('href') for l in soup.find_all("link", rel="icon") if not l.get('href').lower().endswith('.svg')][0]
         if len(href) > 0:
             favicon = calc_href(href, base_url)
@@ -128,8 +139,12 @@ def poke_url(url, recursions=0):
 
     try:
         # need to set headers here to fool sites like cafepress.com...
-        h = requests.get(url, allow_redirects=False, timeout=TIMEOUT, headers=HEADERS)
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        h = requests.get(url,
+                         allow_redirects=False,
+                         timeout=TIMEOUT,
+                         headers=HEADERS)
+    except (requests.exceptions.Timeout,
+            requests.exceptions.ConnectionError) as e:
         return result
 
     if h.status_code == 200:
@@ -140,7 +155,7 @@ def poke_url(url, recursions=0):
 
         the_magic = magic.from_file(fname)
 
-        if any([m in the_magic for m in [b'icon',b'PNG',b'GIF',b'JPEG']]):
+        if any([m in the_magic for m in [b'icon', b'PNG', b'GIF', b'JPEG']]):
             result = h.url
 
         # TODO: detect if all pixels are white or transparent
@@ -155,7 +170,9 @@ def poke_url(url, recursions=0):
 def make_image(domain):
     img = Image.new('RGB', (32, 32), (255, 255, 255))
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(os.path.dirname(os.path.realpath(__file__)) + "/Andale Mono.ttf", 24)
+    font = ImageFont.truetype(
+               os.path.dirname(os.path.realpath(__file__)) +
+               "/Andale Mono.ttf", 24)
     color = (0, 0, 0)
     draw.text((0, 0), domain[0].upper(), color, font=font)
 
