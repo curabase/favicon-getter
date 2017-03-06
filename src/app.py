@@ -6,6 +6,9 @@ from favicon_extractor.favicon_extractor import \
 
 import socket
 import os
+import sys
+import logging
+
 
 app = Flask(__name__)
 
@@ -30,10 +33,15 @@ def grab_favicon():
         return send_file(filename, mimetype='image/png', conditional=True)
 
     # resolve DNS on domain
-    try:
-        socket.create_connection((domain, 80), 5)
-    except socket.error:
-        favicon = 'missing' if favicon is None else favicon
+    logging.info("Checking DNS...")
+    if favicon is None and check_dns(domain) is False:
+        logging.debug('Domain lookup failed. Trying www..')
+        if check_dns('www.{}'.format(domain)):
+            logging.debug('WWW Strategy succeeded!')
+            domain = 'www.{}'.format(domain)
+        else:
+            logging.debug('WWW strategy failed. Fallback to generic icon')
+            favicon = 'missing'
 
     # if favicon location was not set from the url params,
     # the we must hunt for it
@@ -46,7 +54,23 @@ def grab_favicon():
     return send_file(filename, mimetype='image/png', conditional=True)
 
 
+def check_dns(domain):
+    """
+    Check that the domain/hostname given actually resolves.
+    """
+    try:
+        socket.getaddrinfo(domain, None)
+    except socket.error:
+        return False
+    else:
+        return True
+
+
 if __name__ == "__main__":
+    format = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s'\
+             .format(os.getenv('IMAGE_VERSION'))
+    logging.basicConfig(format=format, stream=sys.stdout, level=logging.DEBUG)
+
     debug = os.getenv('DEBUG', False)
     if type(debug) == str:
         debug = debug.lower() in ['1', 'yes', 'true']
