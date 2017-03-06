@@ -9,15 +9,14 @@ import magic
 import os
 import uuid
 import re
+import logging
 
 """
 TODO: convert this into a class
-TODO: Need to handle favicons that use data: urls like
-      this guy: http://ajf.me/
-TODO: Need to handle DNS errors and retry on www.
 TODO: check a random page to force a 404. Then try to pull favicon from here
       heb.com is trying to block bots using JS on their homepage
 """
+
 HEADERS = {
     'User-agent': ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) "
                    "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -53,6 +52,7 @@ def download_or_create_favicon(favicon, domain):
     generic_favicon = "{}/generic_favicon.png".format(file_path)
 
     if favicon == 'missing':
+        logging.debug('{}:favicon missing. Generating one'.format(domain))
         return Image.open(generic_favicon).resize((32, 32))
         # return make_image(domain)
 
@@ -82,10 +82,11 @@ def get_favicon(domain, html=None):
 
             # if we were redirected off the domain, then we catch it here
             new_domain_parts = urlparse(r.url)
-            new_domain = re.sub('^www\.', '', new_domain_parts.netloc)
+            new_domain = new_domain_parts.netloc
 
             # now we just re-check favicons on the new domain
             if domain != new_domain:
+                logging.debug('Switching domains. {} -> {}'.format(domain, new_domain))
                 return get_favicon(new_domain)
 
         except (requests.exceptions.Timeout,
@@ -95,7 +96,7 @@ def get_favicon(domain, html=None):
     favicon = find_in_html(html, base_url)
     if favicon == 'missing':
         for url in common_locations(domain):
-            print('trying %s' % url)
+            logging.debug('trying {}'.format(url))
             if poke_url(url):
                 return url
 
