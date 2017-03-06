@@ -6,4 +6,4 @@ ENV IMAGE_VERSION=$IMAGE_VERSION
 
 EXPOSE 5000
 
-CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000"]
+CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000", "-w","10", "--access-logfile", "-"]
