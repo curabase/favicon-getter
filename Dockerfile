@@ -6,8 +6,9 @@ ENV IMAGE_VERSION=$IMAGE_VERSION
 
 EXPOSE 5000
 
-COPY start-gunicorn.sh /start-gunicorn.sh
-RUN chmod +x /start-gunicorn.sh
+COPY start-gunicorn.sh /usr/src/app/start-gunicorn.sh
+RUN chmod +x /usr/src/app/start-gunicorn.sh
 
 #CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000", "-w","10", "--access-logfile", "-"]
-CMD "/start-gunicorn.sh"
+
+CMD "/usr/src/app/start-gunicorn.sh"
