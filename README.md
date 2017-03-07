@@ -34,10 +34,8 @@ To refresh a domain: `curl http://localhost:5000/?domain=facebook.com&refresh=tr
 This is a really simple app to get started with.
 
   1. `git clone git@bitbucket.org:bkmk/favicon-getter.git`
-  2. `venv .`
-  3. `source venv/bin/activate`
-  4. `pip install -r requirements.txt`
-  5. `python favicon.py`
+  1. `make run` to run production version with gunicorn
+  1. `make run-debug` to run development
 
 # Deploying to production
 
