@@ -1,2 +1,0 @@
-web: ./start-gunicorn.sh
-
