@@ -17,7 +17,7 @@ script to curl those domains to the favicon API
 
 # API Endpoints
 
-There is only one endpoint. favgetter.com/?domain=example.com
+There is only one endpoint. `domain.com/?domain=example.com`
 
 ## Parameters
 
