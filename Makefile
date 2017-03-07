@@ -1,6 +1,6 @@
 # this should be defined from environment vars, but if not, then we punt
 ifndef IMAGE_NAME
-	IMAGE_NAME := favicon/web
+	IMAGE_NAME := curabase/favicon-getter
 endif
 
 # This is problematic because it only works if you have semver installed
