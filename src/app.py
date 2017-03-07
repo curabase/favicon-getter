@@ -29,7 +29,7 @@ def grab_favicon():
     filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
 
     # if the file exists, the just return it now
-    if os.path.isfile(filename):
+    if os.path.isfile(filename) and favicon is None:
         return send_file(filename, mimetype='image/png', conditional=True)
 
     # resolve DNS on domain
