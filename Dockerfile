@@ -9,6 +9,8 @@ EXPOSE 5000
 COPY start-gunicorn.sh /usr/src/app/start-gunicorn.sh
 RUN chmod +x /usr/src/app/start-gunicorn.sh
 
+RUN mkdir /icons && chmod 777 /icons
+
 #CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000", "-w","10", "--access-logfile", "-"]
 
 CMD "/usr/src/app/start-gunicorn.sh"
