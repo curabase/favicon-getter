@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request
+from flask import Flask, send_file, request, make_response
 
 from favicon_extractor.favicon_extractor import \
     get_favicon, \
@@ -30,7 +30,7 @@ def grab_favicon():
 
     # if the file exists, the just return it now
     if os.path.isfile(filename) and favicon is None:
-        return send_file(filename, mimetype='image/png', conditional=True)
+        return do_return_file(filename)
 
     # resolve DNS on domain
     logging.info("Checking DNS...")
@@ -51,7 +51,16 @@ def grab_favicon():
     img = download_or_create_favicon(favicon, domain)
     img.save(filename)
 
-    return send_file(filename, mimetype='image/png', conditional=True)
+    return do_return_file(filename)
+
+
+def do_return_file(filename):
+    response = make_response(send_file(filename,
+                                       mimetype='image/png',
+                                       conditional=True
+                                       ))
+    response.headers['X-IMAGE-VERSION'] = os.getenv('IMAGE_VERSION')
+    return response
 
 
 def check_dns(domain):
