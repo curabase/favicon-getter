@@ -16,12 +16,9 @@ build:
 
 .PHONY: run
 run:
-	mkdir -p icons
 	docker run -it --rm \
-		-v $$PWD/icons:/icons \
 		-p 5000:5000 \
-		-e DEBUG=True \
-		$(IMAGE_NAME) $(CMD)
+		$(DOCKER_TAG) $(CMD)
 
 .PHONY: run-debug
 run-debug:

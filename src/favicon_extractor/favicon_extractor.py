@@ -116,7 +116,8 @@ def find_in_html(html, base_url):
     elif soup.find("link", rel="icon"):
         # this line -- it filters out all .svg hrefs and returns the
         # first sane one
-        href = [l.get('href') for l in soup.find_all("link", rel="icon") if not l.get('href').lower().endswith('.svg')][0]
+        href = [l.get('href') for l in soup.find_all("link", rel="icon")
+                if not l.get('href').lower().endswith('.svg')][0]
         if len(href) > 0:
             favicon = calc_href(href, base_url)
 
