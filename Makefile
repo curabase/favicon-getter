@@ -11,7 +11,6 @@ DOCKER_TAG := $(IMAGE_NAME):$(IMAGE_VERSION)
 .PHONY: build
 build:
 	docker build --build-arg IMAGE_VERSION=$(IMAGE_VERSION) -t $(DOCKER_TAG) .
-	docker tag $(DOCKER_TAG) $(IMAGE_NAME):latest
 
 
 .PHONY: run
