@@ -6,3 +6,4 @@ icons/
 .DS_Store/
 src/.cache/
 *.swp
+.cache/
