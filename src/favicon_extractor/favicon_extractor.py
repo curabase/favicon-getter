@@ -8,7 +8,6 @@ from io import BytesIO
 import magic
 import os
 import uuid
-import re
 import logging
 
 """
@@ -26,8 +25,13 @@ TIMEOUT = 2
 
 
 def common_locations(domain):
+    """
+    Produce an array of the most common locations where we might find a favicon
+    :param domain:
+    :return: an array of urls
+    """
     # extensions = ['ico','png','gif','jpg','jpeg']
-    extensions = ['ico']
+    extensions = ['ico', 'png']
     schemes = ['http', 'https']
     subdomains = ['www.', '']
 
@@ -135,7 +139,12 @@ def find_in_html(html, base_url):
 
 
 def poke_url(url, recursions=0):
+    """
 
+    :param url:
+    :param recursions:
+    :return:
+    """
     # we assume the worst (missing) unless changed below
     result = False
 
@@ -182,15 +191,17 @@ def make_image(domain):
 
 
 def calc_href(href, base_url):
-
+    """
+    Calculate the complete URL based on the base_url and the href fragment
+    :param href:
+    :param base_url:
+    :return:
+    """
     if href.startswith('http'):
         return href
 
     if href.startswith('//'):
         return 'http:' + href
-
-    if href.startswith('/'):
-        return 'http://{}{}'.format(base_url, href)
 
     return urljoin(base_url, href)
 
