@@ -7,7 +7,7 @@ RUN pip install raven[flask]
 
 
 RUN mkdir -p /usr/src/app
-COPY src/ /usr/src/app
+COPY src /usr/src/app
 
 # Pass the command line arg into the ENV arg, persisting it in the docker image
 ARG IMAGE_VERSION
