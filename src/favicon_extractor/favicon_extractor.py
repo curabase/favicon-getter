@@ -189,6 +189,9 @@ def calc_href(href, base_url):
     if href.startswith('//'):
         return 'http:' + href
 
+    if href.startswith('/'):
+        return 'http://{}{}'.format(base_url, href)
+
     return urljoin(base_url, href)
 
 
