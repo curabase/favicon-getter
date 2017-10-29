@@ -30,6 +30,17 @@ run-debug:
 		-e DEBUG=True \
 		$(IMAGE_NAME) python app.py
 
+.PHONY: shell
+shell:
+	mkdir -p icons
+	docker run -it --rm \
+		-v $$PWD/icons:/icons \
+		-v $$PWD/src:/usr/src/app \
+		-w /usr/src/app \
+		-p 5000:5000 \
+		-e DEBUG=True \
+		$(IMAGE_NAME) /bin/bash
+
 
 .PHONY: test
 test:
