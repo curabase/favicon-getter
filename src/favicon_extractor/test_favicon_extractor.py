@@ -32,9 +32,6 @@ class TestFaviconMethods(unittest.TestCase):
         self.assertEqual(find_in_html(html, 'boom.com'),
                          'http://boom.com/favicon.ico')
 
-    def test_upper(self):
-        self.assertEqual('foo'.upper(), 'FOO')
-
 
 if __name__ == '__main__':
     unittest.main()
