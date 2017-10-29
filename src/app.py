@@ -8,9 +8,11 @@ import socket
 import os
 import sys
 import logging
+from raven.contrib.flask import Sentry
 
 
 app = Flask(__name__)
+sentry = Sentry(app)
 
 MEDIA_ROOT = '/icons'
 
@@ -84,3 +86,4 @@ if __name__ == "__main__":
     if type(debug) == str:
         debug = debug.lower() in ['1', 'yes', 'true']
     app.run(host='0.0.0.0', debug=debug)
+

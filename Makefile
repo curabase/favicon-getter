@@ -17,6 +17,7 @@ build:
 run:
 	docker run -it --rm \
 		-p 5000:5000 \
+		-e SENTRY_DSN=$(shell cat .sentry_dsn) \
 		$(DOCKER_TAG) $(CMD)
 
 .PHONY: run-debug
@@ -28,7 +29,8 @@ run-debug:
 		-w /usr/src/app \
 		-p 5000:5000 \
 		-e DEBUG=True \
-		$(IMAGE_NAME) python app.py
+		-e SENTRY_DSN=$(shell cat .sentry_dsn) \
+		$(DOCKER_TAG) python app.py
 
 .PHONY: shell
 shell:
@@ -39,6 +41,7 @@ shell:
 		-w /usr/src/app \
 		-p 5000:5000 \
 		-e DEBUG=True \
+		-e SENTRY_DSN=$(shell cat .sentry_dsn) \
 		$(IMAGE_NAME) /bin/bash
 
 
