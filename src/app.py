@@ -10,6 +10,10 @@ import sys
 import logging
 from raven.contrib.flask import Sentry
 
+fmt = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s' \
+    .format(os.getenv('IMAGE_VERSION'))
+logging.basicConfig(format=fmt, stream=sys.stdout, level=logging.DEBUG)
+log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 sentry = Sentry(app)
@@ -35,14 +39,14 @@ def grab_favicon():
         return do_return_file(filename)
 
     # resolve DNS on domain
-    logging.info("Checking DNS...")
+    log.info("Checking DNS...")
     if favicon is None and check_dns(domain) is False:
-        logging.debug('Domain lookup failed. Trying www..')
+        log.debug('Domain lookup failed. Trying www..')
         if check_dns('www.{}'.format(domain)):
-            logging.debug('WWW Strategy succeeded!')
+            log.debug('WWW Strategy succeeded!')
             domain = 'www.{}'.format(domain)
         else:
-            logging.debug('WWW strategy failed. Fallback to generic icon')
+            log.debug('WWW strategy failed. Fallback to generic icon')
             favicon = 'missing'
 
     # if favicon location was not set from the url params,
@@ -78,9 +82,6 @@ def check_dns(domain):
 
 
 if __name__ == "__main__":
-    format = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s'\
-             .format(os.getenv('IMAGE_VERSION'))
-    logging.basicConfig(format=format, stream=sys.stdout, level=logging.DEBUG)
 
     debug = os.getenv('DEBUG', False)
     if type(debug) == str:
