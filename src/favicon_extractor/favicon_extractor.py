@@ -1,7 +1,7 @@
 import requests
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
-
+from datauri import DataURI
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
@@ -9,6 +9,8 @@ import magic
 import os
 import uuid
 import logging
+
+log = logging.getLogger(__name__)
 
 """
 TODO: convert this into a class
@@ -55,8 +57,14 @@ def download_or_create_favicon(favicon, domain):
     file_path = os.path.dirname(os.path.realpath(__file__))
     generic_favicon = "{}/generic_favicon.png".format(file_path)
 
+    if favicon.startswith('data:image'):
+        log.debug('Found data:image uri!')
+        uri = DataURI(favicon)
+        data = uri.data
+        return Image.open(BytesIO(data)).resize((32, 32))
+
     if favicon == 'missing':
-        logging.debug('{}:favicon missing. Generating one'.format(domain))
+        log.debug('{}:favicon missing. Generating one'.format(domain))
         return Image.open(generic_favicon).resize((32, 32))
         # return make_image(domain)
 
@@ -90,7 +98,7 @@ def get_favicon(domain, html=None):
 
             # now we just re-check favicons on the new domain
             if domain != new_domain:
-                logging.debug('Switching domains. {} -> {}'.format(domain, new_domain))
+                log.debug('Switching domains. {} -> {}'.format(domain, new_domain))
                 return get_favicon(new_domain)
 
         except (requests.exceptions.Timeout,
@@ -100,7 +108,7 @@ def get_favicon(domain, html=None):
     favicon = find_in_html(html, base_url)
     if favicon == 'missing':
         for url in common_locations(domain):
-            logging.debug('trying {}'.format(url))
+            log.debug('trying {}'.format(url))
             if poke_url(url):
                 return url
 
@@ -108,34 +116,47 @@ def get_favicon(domain, html=None):
 
 
 def find_in_html(html, base_url):
-
-    favicon = 'missing'
+    """
+    Look for a favicon (or apple touch icon) in an html string.
+    :param html: The HTML string (often entire page source)
+    :param base_url: Base URL for the page (eg http://example.com)
+    :return: a string URL of the favicon location or data-uri
+    """
     soup = BeautifulSoup(html, 'html5lib')
 
-    if soup.find("link", rel="shortcut"):
-        href = soup.find("link", rel="shortcut")['href']
-        if len(href) > 0:
-            favicon = calc_href(href, base_url)
+    # test if favicon is loaded uses data:image uri scheme
+    target = soup.find('link', attrs={'rel': lambda x: x and x.lower()=='shortcut'})
+    if target:
+        href = target.get('href', '')
 
-    elif soup.find("link", rel="icon"):
+        if href.startswith('data:image'):
+            return href
+
+        if len(href) > 0:
+            return calc_href(href, base_url)
+
+    target = soup.find('link', attrs={'rel': lambda x: x and x.lower()=='icon'})
+    if target:
         # this line -- it filters out all .svg hrefs and returns the
         # first sane one
-        href = [l.get('href') for l in soup.find_all("link", rel="icon")
-                if not l.get('href').lower().endswith('.svg')][0]
+        icons = soup.find_all("link", attrs={'rel': lambda x: x and x.lower()=='icon'})
+        href = [l.get('href') for l in icons if not l.get('href').lower().endswith('.svg')][0]
         if len(href) > 0:
-            favicon = calc_href(href, base_url)
+            return calc_href(href, base_url)
 
-    elif soup.find("link", rel="apple-touch-icon"):
-        href = soup.find("link", rel="apple-touch-icon")['href']
+    target = soup.find('link', attrs={'rel': lambda x: x and x.lower()=='apple-touch-icon'})
+    if target:
+        href = target.get('href')
         if len(href) > 0:
-            favicon = calc_href(href, base_url)
+            return calc_href(href, base_url)
 
-    elif soup.find("link", rel="apple-touch-icon-precomposed"):
-        href = soup.find("link", rel="apple-touch-icon-precomposed")['href']
+    target = soup.find('link', attrs={'rel': lambda x: x and x.lower()=='apple-touch-icon-precomposed'})
+    if target:
+        href = target.get('href')
         if len(href) > 0:
-            favicon = calc_href(href, base_url)
+            return calc_href(href, base_url)
 
-    return favicon
+    return 'missing'
 
 
 def poke_url(url, recursions=0):
