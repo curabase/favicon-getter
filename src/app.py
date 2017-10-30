@@ -55,6 +55,8 @@ def grab_favicon():
         favicon = get_favicon(domain)
 
     img = download_or_create_favicon(favicon, domain)
+    if img.mode == 'CMYK':
+        img = img.convert('RGB')
     img.save(filename)
 
     return do_return_file(filename)
