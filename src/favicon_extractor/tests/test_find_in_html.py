@@ -1,5 +1,5 @@
 import unittest
-from .favicon_extractor import find_in_html
+from ..favicon_extractor import find_in_html
 
 base_url = 'http://example.com'
 

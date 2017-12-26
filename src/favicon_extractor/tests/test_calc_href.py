@@ -1,9 +1,5 @@
 import unittest
-
-"""
-from fixtures import *
-"""
-from .favicon_extractor import calc_href
+from ..favicon_extractor import calc_href
 
 base_url = 'http://example.com'
 expected = 'http://example.com/favicon.ico'
