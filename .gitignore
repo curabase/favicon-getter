@@ -7,3 +7,4 @@ icons/
 src/.cache/
 *.swp
 .cache/
+.sentry_dsn
