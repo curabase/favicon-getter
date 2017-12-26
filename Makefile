@@ -8,10 +8,16 @@ IMAGE_VERSION := $(shell semver.sh bump patch)
 DOCKER_RUN := docker run --rm -v $$PWD/src:/usr/src/app $(IMAGE_NAME)
 DOCKER_TAG := $(IMAGE_NAME):$(IMAGE_VERSION)
 
+DOCKER_DEV := $(IMAGE_NAME):$(shell git describe --tags)
+DOCKER_RUN_DEV := docker run --rm -v $$PWD/src:/usr/src/app $(DOCKER_DEV)
+
 .PHONY: build
 build:
 	docker build --build-arg IMAGE_VERSION=$(IMAGE_VERSION) -t $(DOCKER_TAG) .
 
+.PHONY: build-dev
+build-dev:
+	docker build --build-arg IMAGE_VERSION=$(shell git describe --tags) -t $(DOCKER_DEV) .
 
 .PHONY: run
 run:
@@ -30,7 +36,7 @@ run-debug:
 		-p 5000:5000 \
 		-e DEBUG=True \
 		-e SENTRY_DSN=$(shell cat .sentry_dsn) \
-		$(DOCKER_TAG) python app.py
+		$(DOCKER_DEV) python app.py
 
 .PHONY: shell
 shell:
@@ -39,15 +45,18 @@ shell:
 		-v $$PWD/icons:/icons \
 		-v $$PWD/src:/usr/src/app \
 		-w /usr/src/app \
-		-p 5000:5000 \
 		-e DEBUG=True \
 		-e SENTRY_DSN=$(shell cat .sentry_dsn) \
-		$(IMAGE_NAME) /bin/bash
+		$(DOCKER_DEV) /bin/bash
 
 
 .PHONY: test
 test:
 	$(DOCKER_RUN) pytest
+
+.PHONY: test
+test-dev:
+	$(DOCKER_RUN_DEV) pytest
 
 
 .PHONY: clean
