@@ -106,7 +106,8 @@ def get_favicon(domain, html=None):
             return 'missing'
 
     favicon = find_in_html(html, base_url)
-    if favicon == 'missing':
+    is_valid_file = poke_url(favicon)
+    if favicon == 'missing' or not is_valid_file:
         for url in common_locations(domain):
             log.debug('trying {}'.format(url))
             if poke_url(url):
