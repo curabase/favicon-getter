@@ -5,10 +5,12 @@ from datauri import DataURI
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
-import magic
+from magic import from_file
 import os
 import uuid
 import logging
+
+from typing import Union, List
 
 log = logging.getLogger(__name__)
 
@@ -26,12 +28,14 @@ HEADERS = {
 TIMEOUT = 2
 
 
-def common_locations(domain):
+def common_locations(domain: str) -> List[str]:
     """
     Produce an array of the most common locations where we might find a favicon
-    :param domain:
-    :return: an array of urls
+
+    :param domain: just the base domain name (example.com)
+    :return: a list of urls
     """
+
     # extensions = ['ico','png','gif','jpg','jpeg']
     extensions = ['ico', 'png']
     schemes = ['http', 'https']
@@ -53,7 +57,13 @@ def common_locations(domain):
     return locations
 
 
-def download_or_create_favicon(favicon, domain):
+def download_or_create_favicon(favicon: str, domain: str) -> Image:
+    """
+
+    :param favicon:
+    :param domain:
+    :return:
+    """
     file_path = os.path.dirname(os.path.realpath(__file__))
     generic_favicon = "{}/generic_favicon.png".format(file_path)
 
@@ -66,6 +76,8 @@ def download_or_create_favicon(favicon, domain):
     if favicon == 'missing':
         log.debug('{}:favicon missing. Generating one'.format(domain))
         return Image.open(generic_favicon).resize((32, 32))
+
+        # todo: consider the make_image() function to customize the default icon
         # return make_image(domain)
 
     r = requests.get(favicon, timeout=TIMEOUT, headers=HEADERS)
@@ -78,7 +90,15 @@ def download_or_create_favicon(favicon, domain):
         # return make_image(domain)
 
 
-def get_favicon(domain, html=None):
+def get_favicon(domain: str, html: str=None) -> str:
+    """
+    Find the favicon for a domain or a given HTML string
+
+    :param domain: domain name (eg example.com)
+    :param html: an HTML string (default is None)
+
+    :return: string url location of the favicon
+    """
 
     # TODO: check DNS / check DNS on www.
 
@@ -116,13 +136,15 @@ def get_favicon(domain, html=None):
     return favicon
 
 
-def find_in_html(html, base_url):
+def find_in_html(html: str, base_url: str) -> str:
     """
     Look for a favicon (or apple touch icon) in an html string.
+
     :param html: The HTML string (often entire page source)
     :param base_url: Base URL for the page (eg http://example.com)
     :return: a string URL of the favicon location or data-uri
     """
+
     soup = BeautifulSoup(html, 'html5lib')
 
     # test if favicon is loaded uses data:image uri scheme
@@ -160,13 +182,15 @@ def find_in_html(html, base_url):
     return 'missing'
 
 
-def poke_url(url, recursions=0):
+def poke_url(url: str) -> Union[str, bool]:
+    """
+    Attempt to download the favicon at the url and test to make sure it is one
+    of the accepted file types
+
+    :param url: full URL of the endpoint to test (eg http://example.com/favicon.ico
+    :return:    Either returns the url if successful or False if not
     """
 
-    :param url:
-    :param recursions:
-    :return:
-    """
     # we assume the worst (missing) unless changed below
     result = False
 
@@ -186,7 +210,7 @@ def poke_url(url, recursions=0):
         f.write(h.content)
         f.close()
 
-        the_magic = magic.from_file(fname)
+        the_magic = from_file(fname)
 
         if any([m in the_magic for m in [b'icon', b'PNG', b'GIF', b'JPEG']]):
             result = h.url
@@ -200,7 +224,13 @@ def poke_url(url, recursions=0):
     return result
 
 
-def make_image(domain):
+def make_image(domain: str) -> Image:
+    """
+
+    :param domain:
+    :return:
+    """
+
     img = Image.new('RGB', (32, 32), (255, 255, 255))
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype(
@@ -212,7 +242,7 @@ def make_image(domain):
     return img
 
 
-def calc_href(href, base_url):
+def calc_href(href: str, base_url: str) -> str:
     """
     Calculate the complete URL based on the base_url and the href fragment
     :param href:
