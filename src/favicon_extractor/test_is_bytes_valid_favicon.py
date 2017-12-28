@@ -1,5 +1,5 @@
 import unittest
-from ..favicon_extractor import is_bytes_valid_favicon
+from .favicon_extractor import is_bytes_valid_favicon
 from io import BytesIO
 from datauri import DataURI
 
