@@ -8,7 +8,7 @@ IMAGE_VERSION := $(shell semver.sh bump patch)
 DOCKER_RUN := docker run --rm -v $$PWD/src:/usr/src/app $(IMAGE_NAME)
 DOCKER_TAG := $(IMAGE_NAME):$(IMAGE_VERSION)
 
-DOCKER_DEV := $(IMAGE_NAME):$(shell git describe --tags)
+DOCKER_DEV := $(IMAGE_NAME):latest
 DOCKER_RUN_DEV := docker run --rm -v $$PWD/src:/usr/src/app $(DOCKER_DEV)
 
 .PHONY: build
