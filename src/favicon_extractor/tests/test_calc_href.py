@@ -12,6 +12,7 @@ inputs = [
     (base_url, '/favicon.ico', expected),
     (base_url, 'https://example.com/favicon.ico', 'https://example.com/favicon.ico'),
     ('https://example.com', 'http://example.com/favicon.ico', 'http://example.com/favicon.ico'),
+    (base_url, '/sites/all/themes/hedu2015/assets/img/favicon.ico','http://example.com/sites/all/themes/hedu2015/assets/img/favicon.ico')
 ]
 
 

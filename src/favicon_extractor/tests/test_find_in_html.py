@@ -46,5 +46,10 @@ class TestFindInHtml(unittest.TestCase):
         self.assertEqual(find_in_html(html, 'boom.com'),
                          'http://cdn.livetvcdn.net/favicon.ico')
 
+    def test_with_favicon_in_multiple_subfolders(self):
+        html = '<link rel="shortcut icon" type="image/ico" href="/sites/all/themes/hedu2015/assets/img/favicon.ico" />'
+        self.assertEqual(find_in_html(html, 'http://boom.com'),
+                         'http://boom.com/sites/all/themes/hedu2015/assets/img/favicon.ico')
+
 if __name__ == '__main__':
     unittest.main()
