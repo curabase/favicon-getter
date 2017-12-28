@@ -14,3 +14,4 @@ Werkzeug==0.13
 raven==6.4.0
 blinker==1.4
 python-datauri==0.2.5
+CairoSVG==2.1.2

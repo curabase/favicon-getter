@@ -3,9 +3,10 @@ from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from datauri import DataURI
 from PIL import Image, ImageDraw, ImageFont
+import cairosvg
 from io import BytesIO
 
-from magic import from_file
+from magic import from_file, from_buffer
 import os
 import uuid
 import logging
@@ -250,7 +251,18 @@ def download_remote_favicon(url: str) -> Union[BytesIO, bool]:
         log.debug('download_remote_favicon:{}'.format(e))
         return False
 
-    return h.content if h.status_code == 200 and (len(h.content) > 0) else False
+    if h.status_code == 404:
+        return False
+
+    # is the returning file SVG? If so, we have to convert it to bitmap (png)
+    #content = cairosvg.svg2png(bytestring=h.content) if 'SVG' in from_buffer(h.content) else h.content
+
+    if 'SVG' in from_buffer(h.content) or url.endswith('.svg'):
+        content = cairosvg.svg2png(bytestring=h.content)
+    else:
+        content = h.content
+
+    return content if h.status_code == 200 and (len(content) > 0) else False
 
 
 def make_image(domain: str) -> Image:
