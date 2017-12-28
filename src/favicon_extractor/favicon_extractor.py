@@ -25,7 +25,7 @@ HEADERS = {
                    "AppleWebKit/537.36 (KHTML, like Gecko) "
                    "Chrome/48.0.2564.103 Safari/537.36")
 }
-TIMEOUT = 2
+TIMEOUT = 10
 
 
 def common_locations(domain: str) -> List[str]:
@@ -39,7 +39,7 @@ def common_locations(domain: str) -> List[str]:
     # extensions = ['ico','png','gif','jpg','jpeg']
     extensions = ['ico', 'png']
     schemes = ['http', 'https']
-    subdomains = ['www.', '']
+    subdomains = ['']
 
     locations = []
 
@@ -67,27 +67,25 @@ def download_or_create_favicon(favicon: str, domain: str) -> Image:
     file_path = os.path.dirname(os.path.realpath(__file__))
     generic_favicon = "{}/generic_favicon.png".format(file_path)
 
+    # handle the case for data: URIs
     if favicon.startswith('data:image'):
-        log.debug('Found data:image uri!')
         uri = DataURI(favicon)
-        data = uri.data
-        return Image.open(BytesIO(data)).resize((32, 32))
+        data = BytesIO(uri.data)
 
-    if favicon == 'missing':
-        log.debug('{}:favicon missing. Generating one'.format(domain))
-        return Image.open(generic_favicon).resize((32, 32))
+    # Favicon was determined to be missing, so use a generic icon
+    elif favicon == 'missing':
+        data = generic_favicon
 
-        # todo: consider the make_image() function to customize the default icon
+    # Looks like a normal favicon url, lets go get it
+    elif favicon.startswith('http'):
+        r = download_remote_favicon(favicon)
+        data = BytesIO(r) if r else generic_favicon
         # return make_image(domain)
 
-    r = requests.get(favicon, timeout=TIMEOUT, headers=HEADERS)
+    img = Image.open(data)
+    img = img.convert('RGB') if img.mode == 'CMYK' else img
 
-    # response and that the file exists and is not empty
-    if (r.status_code == requests.codes.ok) and (len(r.text) > 0):
-        return Image.open(BytesIO(r.content)).resize((32, 32))
-    else:
-        return Image.open(generic_favicon).resize((32, 32))
-        # return make_image(domain)
+    return img
 
 
 def get_favicon(domain: str, html: str=None) -> str:
@@ -97,11 +95,10 @@ def get_favicon(domain: str, html: str=None) -> str:
     :param domain: domain name (eg example.com)
     :param html: an HTML string (default is None)
 
-    :return: string url location of the favicon
+    :return: string uri location of the favicon (could be http: or data:image)
     """
 
     # TODO: check DNS / check DNS on www.
-
     base_url = 'http://{}'.format(domain)
 
     if html is None:
@@ -109,7 +106,7 @@ def get_favicon(domain: str, html: str=None) -> str:
 
             # set the user agent to fool economist.com and other sites
             # who care...
-            r = requests.get(base_url, timeout=TIMEOUT, headers=HEADERS)
+            r = requests.get(base_url, timeout=TIMEOUT, headers=HEADERS, verify=False)
             html = r.text
 
             # if we were redirected off the domain, then we catch it here
@@ -123,17 +120,18 @@ def get_favicon(domain: str, html: str=None) -> str:
 
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError) as e:
+            if 'www' not in domain:
+                return get_favicon('www.{}'.format(domain))
             return 'missing'
 
-    favicon = find_in_html(html, base_url)
-    is_valid_file = poke_url(favicon)
-    if favicon == 'missing' or not is_valid_file:
+    favicon_uri = find_in_html(html, base_url)
+    if is_uri_valid_favicon(favicon_uri) is False:
         for url in common_locations(domain):
             log.debug('trying {}'.format(url))
-            if poke_url(url):
+            if is_uri_valid_favicon(url):
                 return url
 
-    return favicon
+    return favicon_uri
 
 
 def find_in_html(html: str, base_url: str) -> str:
@@ -182,46 +180,80 @@ def find_in_html(html: str, base_url: str) -> str:
     return 'missing'
 
 
-def poke_url(url: str) -> Union[str, bool]:
-    """
-    Attempt to download the favicon at the url and test to make sure it is one
-    of the accepted file types
-
-    :param url: full URL of the endpoint to test (eg http://example.com/favicon.ico
-    :return:    Either returns the url if successful or False if not
+def is_uri_valid_favicon(uri: str) -> bool:
     """
 
-    # we assume the worst (missing) unless changed below
+    :param uri:
+    :return:
+    """
+
+    if uri.startswith('http') is False and uri.startswith('data:image') is False:
+        return False
+
+    if uri.startswith('http'):
+        data = download_remote_favicon(uri)
+
+    if uri.startswith('data:image'):
+        data = DataURI(uri).data
+
+    return is_bytes_valid_favicon(BytesIO(data)) if data else False
+
+
+def is_bytes_valid_favicon(data: BytesIO) -> bool:
+    """
+
+    :param data:
+    :return:
+    """
+    if type(data) is not BytesIO:
+        raise TypeError('Data is not type BytesIO')
+
     result = False
+
+    fname = '/tmp/{}'.format(str(uuid.uuid4()))
+    f = open(fname, 'wb')
+    f.write(data.read())
+    f.close()
+
+    the_magic = from_file(fname)
+
+    if any([m in the_magic for m in [b'icon', b'PNG', b'GIF', b'JPEG']]):
+        result = True
+
+    # TODO: detect if all pixels are white or transparent
+    # http://stackoverflow.com/a/1963146/1646663
+    # http://stackoverflow.com/a/14041871/1646663
+
+    os.remove(fname)
+
+    return result
+
+
+def download_remote_favicon(url: str) -> Union[BytesIO, bool]:
+    """
+
+    :param url:
+    :return:
+    """
+    if not url.startswith('http'):
+        raise ValueError('Must be a URL that starts with http or https')
 
     try:
         # need to set headers here to fool sites like cafepress.com...
         h = requests.get(url,
-                         allow_redirects=False,
+                         allow_redirects=True,
                          timeout=TIMEOUT,
-                         headers=HEADERS)
+                         headers=HEADERS,
+                         verify=False)
     except (requests.exceptions.Timeout,
-            requests.exceptions.ConnectionError) as e:
-        return result
+            requests.exceptions.ConnectionError,
+            requests.exceptions.InvalidSchema,
+            requests.exceptions.MissingSchema,
+            requests.exceptions.InvalidURL) as e:
+        log.debug('download_remote_favicon:{}'.format(e))
+        return False
 
-    if h.status_code == 200:
-        fname = '/tmp/{}'.format(str(uuid.uuid4()))
-        f = open(fname, 'wb')
-        f.write(h.content)
-        f.close()
-
-        the_magic = from_file(fname)
-
-        if any([m in the_magic for m in [b'icon', b'PNG', b'GIF', b'JPEG']]):
-            result = h.url
-
-        # TODO: detect if all pixels are white or transparent
-        # http://stackoverflow.com/a/1963146/1646663
-        # http://stackoverflow.com/a/14041871/1646663
-
-        os.remove(fname)
-
-    return result
+    return h.content if h.status_code == 200 and (len(h.content) > 0) else False
 
 
 def make_image(domain: str) -> Image:
