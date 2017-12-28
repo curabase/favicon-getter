@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 sentry = Sentry(app)
 
-MEDIA_ROOT = '/icons'
+MEDIA_ROOT = '{}/icons'.format(os.path.dirname(os.path.realpath(__file__)))
 
 
 @app.route("/")
@@ -50,13 +50,10 @@ def grab_favicon():
             favicon = 'missing'
 
     # if favicon location was not set from the url params,
-    # the we must hunt for it
-    if favicon is None:
-        favicon = get_favicon(domain)
+    # then we must hunt for it
+    favicon = get_favicon(domain) if favicon is None else favicon
 
     img = download_or_create_favicon(favicon, domain)
-    if img.mode == 'CMYK':
-        img = img.convert('RGB')
     img.save(filename)
 
     return do_return_file(filename)
