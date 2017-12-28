@@ -51,5 +51,15 @@ class TestFindInHtml(unittest.TestCase):
         self.assertEqual(find_in_html(html, 'http://boom.com'),
                          'http://boom.com/sites/all/themes/hedu2015/assets/img/favicon.ico')
 
+    def test_svg_favicon(self):
+        html = '<link rel="icon" href="https://resources.whatwg.org/logo.svg">'
+        self.assertEqual(find_in_html(html, 'http://boom.com'),
+                         'https://resources.whatwg.org/logo.svg')
+
+    def test_svg_favicon_relative_url(self):
+        html = '<link rel="icon" href="/logo.svg">'
+        self.assertEqual(find_in_html(html, 'http://boom.com'),
+                         'http://boom.com/logo.svg')
+
 if __name__ == '__main__':
     unittest.main()

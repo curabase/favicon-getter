@@ -158,10 +158,7 @@ def find_in_html(html: str, base_url: str) -> str:
 
     target = soup.find('link', attrs={'rel': lambda x: x and x.lower()=='icon'})
     if target:
-        # this line -- it filters out all .svg hrefs and returns the
-        # first sane one
-        icons = soup.find_all("link", attrs={'rel': lambda x: x and x.lower()=='icon'})
-        href = [l.get('href') for l in icons if not l.get('href').lower().endswith('.svg')][0]
+        href = target.get('href')
         if len(href) > 0:
             return calc_href(href, base_url)
 
@@ -217,7 +214,7 @@ def is_bytes_valid_favicon(data: BytesIO) -> bool:
 
     the_magic = from_file(fname)
 
-    if any([m in the_magic for m in [b'icon', b'PNG', b'GIF', b'JPEG']]):
+    if any([m in the_magic for m in ['icon', 'PNG', 'GIF', 'JPEG', 'SVG']]):
         result = True
 
     # TODO: detect if all pixels are white or transparent
