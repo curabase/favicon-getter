@@ -9,6 +9,7 @@ import os
 import sys
 import logging
 from raven.contrib.flask import Sentry
+import validators
 
 fmt = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s' \
     .format(os.getenv('IMAGE_VERSION'))
@@ -28,10 +29,15 @@ def grab_favicon():
     favicon = request.args.get('favicon', None)
 
     if domain is None:
-        return 'No domain given'
+        return 'No domain given', 400
 
     domain = domain.split('?')[0].split('/')[0]
 
+    if not validators.domain(domain):
+        return 'Domain name is invalid', 400
+
+    # domain = domain.replace('\u200c','')
+    #
     filename = '{}/{}.png'.format(MEDIA_ROOT, domain)
 
     # if the file exists, the just return it now
