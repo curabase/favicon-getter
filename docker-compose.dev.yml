@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
 
@@ -8,3 +8,4 @@ services:
       - ./src:/app
     ports:
       - "5000:5000"
+#    command: python app.py
