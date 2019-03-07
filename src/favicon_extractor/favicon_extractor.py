@@ -85,6 +85,7 @@ def download_or_create_favicon(favicon: str, domain: str) -> Image:
 
     img = Image.open(data)
     img = img.convert('RGB') if img.mode == 'CMYK' else img
+    img.thumbnail((16, 16), Image.ANTIALIAS)
 
     return img
 
