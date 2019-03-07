@@ -1,15 +1,21 @@
 from flask import Flask, send_file, request, make_response
-
-from favicon_extractor.favicon_extractor import \
-    get_favicon, \
-    download_or_create_favicon
-
+from favicon_extractor.favicon_extractor import get_favicon, download_or_create_favicon
 import socket
 import os
 import sys
 import logging
-from raven.contrib.flask import Sentry
 import validators
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from dotenv import load_dotenv, find_dotenv
+
+
+load_dotenv(find_dotenv('env'))
+
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[FlaskIntegration()]
+)
 
 fmt = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s' \
     .format(os.getenv('IMAGE_VERSION'))
@@ -17,7 +23,6 @@ logging.basicConfig(format=fmt, stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 app = Flask(__name__)
-sentry = Sentry(app)
 
 MEDIA_ROOT = '{}/icons'.format(os.path.dirname(os.path.realpath(__file__)))
 
@@ -84,12 +89,3 @@ def check_dns(domain):
         return False
     else:
         return True
-
-
-if __name__ == "__main__":
-
-    debug = os.getenv('DEBUG', False)
-    if type(debug) == str:
-        debug = debug.lower() in ['1', 'yes', 'true']
-    app.run(host='0.0.0.0', debug=debug)
-

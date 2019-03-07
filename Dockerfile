@@ -1,9 +1,24 @@
-FROM python:3
+FROM python:3.6-slim
 
 ENV PYTHONUNBUFFERED 1
 
+RUN apt-get update && \
+    apt-get install -y \
+            build-essential \
+            python3-dev \
+            python3-pip \
+            python3-setuptools \
+            python3-wheel \
+            python3-cffi \
+            libcairo2 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libgdk-pixbuf2.0-0 \
+            libffi-dev \
+            shared-mime-info
+
 COPY requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+RUN pip install -r --no-cache-dir /requirements.txt
 
 RUN mkdir -p /app
 COPY src /app
@@ -12,15 +27,11 @@ COPY src /app
 ARG IMAGE_VERSION
 ENV IMAGE_VERSION=$IMAGE_VERSION
 
-EXPOSE 5000
+EXPOSE 8000
 
-COPY start-gunicorn.sh /start-gunicorn.sh
-RUN chmod +x /start-gunicorn.sh
-
+COPY gunicorn_settings.py /gunicorn_settings.py
 RUN mkdir /app/icons && chmod 777 /app/icons
-
-#CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:5000", "-w","10", "--access-logfile", "-"]
 
 WORKDIR /app
 
-CMD "/start-gunicorn.sh"
+CMD ["gunicorn", "-c", "/gunicorn_settings.py", "wsgi:app"]
