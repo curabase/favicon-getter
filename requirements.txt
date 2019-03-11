@@ -15,5 +15,5 @@ sentry-sdk[flask]==0.7.2
 blinker==1.4
 python-datauri==0.2.5
 CairoSVG==2.1.2
-validators==0.12.0
 python-dotenv
+mypy

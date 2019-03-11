@@ -1,5 +1,5 @@
 import unittest
-from .favicon_extractor import download_remote_favicon
+from ..favicon_extractor import FavIcon, FavIconException
 from io import BytesIO
 from datauri import DataURI
 from unittest.mock import patch
@@ -12,45 +12,65 @@ DATA_URI = 'data:image/vnd.microsoft.icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACg
 
 class TestDownloadRemoteFavicon(unittest.TestCase):
 
+    def setUp(self):
+        self.favicon = FavIcon('http://example.com')
+
     def test_url_is_empty(self):
-        self.assertRaises(ValueError, download_remote_favicon,'')
+        url = ''
+        with self.assertRaises(FavIconException):
+            self.favicon.download_remote_favicon(url)
 
     def test_url_missing_http(self):
-        self.assertRaises(ValueError, download_remote_favicon,'//example.com/favicon.ico')
+        url = '//example.com/favicon.ico'
+        with self.assertRaises(FavIconException):
+            self.favicon.download_remote_favicon(url)
 
     def test_url_is_malformed(self):
-        self.assertFalse(download_remote_favicon('http:://example.com/favicon.ico'))
-        self.assertFalse(download_remote_favicon('http:///example.com/favicon.ico'))
-        self.assertFalse(download_remote_favicon('http//example.com/favicon.ico'))
-        self.assertFalse(download_remote_favicon('http:://e[[[xample.com/favicon.ico'))
+        urls = [
+            'http:://example.com/favicon.ico',
+            'http:///example.com/favicon.ico',
+            'http//example.com/favicon.ico',
+            'http:://e[[[xample.com/favicon.ico',
+        ]
+        for u in urls:
+            url = u
+            with self.assertRaises(FavIconException):
+                self.favicon.download_remote_favicon(url)
 
     def test_url_is_valid_but_response_is_404(self):
 
+        url = 'https://httpbin.org/status/404'
+
         # mock the response
-        with patch('requests.get') as m:
-            m.return_value.content = None
-            m.return_value.status_code = 404
-            self.assertFalse(download_remote_favicon('http://example.com.com/favicon.ico'))
+        with self.assertRaises(FavIconException):
+            self.favicon.download_remote_favicon(url)
 
     def test_url_is_valid_but_response_content_is_empty(self):
+
+        url = 'http://example.com.com/favicon.ico'
 
         # mock the response
         with patch('requests.get') as m:
             m.return_value.content = b''
             m.return_value.status_code = 200
-            self.assertFalse(download_remote_favicon('http://example.com.com/favicon.ico'))
+            with self.assertRaises(FavIconException):
+                self.favicon.download_remote_favicon(url)
 
     def test_url_is_valid(self):
-        content = BytesIO(DataURI(DATA_URI).data)
+        url = 'http://example.com.com/favicon.ico'
 
         # mock the response
         with patch('requests.get') as m:
-            content = BytesIO(DataURI(DATA_URI).data).read()
+            content = DataURI(DATA_URI).data
             m.return_value.content = content
             m.return_value.status_code = 200
-            self.assertEqual(download_remote_favicon('http://example.com.com/favicon.ico'), content)
+            image = self.favicon.download_remote_favicon(url)
+            self.assertEqual(image, content)
 
     def test_svg_is_converted_properly(self):
+
+        url = 'http://example.com.com/logo.svg'
+
         filename = '{}/fixtures/logo.svg'.format(os.path.dirname(os.path.realpath(__file__)))
         with open(filename,'rb') as f:
             content = f.read()
@@ -58,10 +78,5 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
         with patch('requests.get') as m:
             m.return_value.content = content
             m.return_value.status_code = 200
-
-            result = from_buffer(download_remote_favicon('http://whatwg.org/favicon.svg'))
-            self.assertIn('PNG', result)
-
-
-if __name__ == '__main__':
-    unittest.main()
+            image = self.favicon.download_remote_favicon(url)
+            self.assertIn(b'PNG', image)

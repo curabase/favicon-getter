@@ -1,0 +1,1 @@
+from .favicon_extractor import FavIconException, FavIcon

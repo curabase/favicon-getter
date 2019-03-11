@@ -1,5 +1,5 @@
 import unittest
-from .favicon_extractor import find_in_html
+from ..favicon_extractor import FavIcon, FavIconException
 
 base_url = 'http://example.com'
 
@@ -10,56 +10,75 @@ FAVICON_AS_DATA_URI = '<link rel="shortcut icon" href="data:image/vnd.microsoft.
 
 class TestFindInHtml(unittest.TestCase):
 
+    def setUp(self):
+        self.favicon = FavIcon('http://example.com')
+
     def test_data_uri_in_href(self):
-        self.assertTrue(find_in_html(FAVICON_AS_DATA_URI, base_url).startswith('data:image'))
+        url = self.favicon.find_in_html(FAVICON_AS_DATA_URI)
+        self.assertTrue(url.startswith('data:image'))
 
     def test_no_favicon_defined(self):
-        self.assertEqual(find_in_html(NO_FAVICON_DEFINED, base_url), 'missing')
+        with self.assertRaises(FavIconException):
+            self.favicon.find_in_html(NO_FAVICON_DEFINED)
 
     def test_find_in_html_slash_favicon(self):
         html = '<link rel="shortcut icon" href="/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'http://boom.com'),
-                         'http://boom.com/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/favicon.ico')
 
     def test_uppercase_attribute_values(self):
         html = '<link rel="SHORTCUT ICON" href="//cdn.livetvcdn.net/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'boom.com'),
-                         'http://cdn.livetvcdn.net/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://cdn.livetvcdn.net/favicon.ico')
 
     def test_lower_case_attribute_values(self):
         html = '<link rel="shortcut icon" href="//cdn.livetvcdn.net/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'boom.com'),
-                         'http://cdn.livetvcdn.net/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://cdn.livetvcdn.net/favicon.ico')
 
     def test_mixed_case_attribute_values(self):
         html = '<link rel="Shortcut Icon" href="//cdn.livetvcdn.net/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'boom.com'),
-                         'http://cdn.livetvcdn.net/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://cdn.livetvcdn.net/favicon.ico')
 
     def test_uppercase_tags(self):
         html = '<LINK REL="Shortcut Icon" HREF="//cdn.livetvcdn.net/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'boom.com'),
-                         'http://cdn.livetvcdn.net/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://cdn.livetvcdn.net/favicon.ico')
 
     def test_mixed_case_tags(self):
         html = '<Link Rel="Shortcut Icon" Href="//cdn.livetvcdn.net/favicon.ico">'
-        self.assertEqual(find_in_html(html, 'boom.com'),
-                         'http://cdn.livetvcdn.net/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://cdn.livetvcdn.net/favicon.ico')
 
     def test_with_favicon_in_multiple_subfolders(self):
         html = '<link rel="shortcut icon" type="image/ico" href="/sites/all/themes/hedu2015/assets/img/favicon.ico" />'
-        self.assertEqual(find_in_html(html, 'http://boom.com'),
-                         'http://boom.com/sites/all/themes/hedu2015/assets/img/favicon.ico')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/sites/all/themes/hedu2015/assets/img/favicon.ico')
 
     def test_svg_favicon(self):
         html = '<link rel="icon" href="https://resources.whatwg.org/logo.svg">'
-        self.assertEqual(find_in_html(html, 'http://boom.com'),
-                         'https://resources.whatwg.org/logo.svg')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'https://resources.whatwg.org/logo.svg')
 
     def test_svg_favicon_relative_url(self):
         html = '<link rel="icon" href="/logo.svg">'
-        self.assertEqual(find_in_html(html, 'http://boom.com'),
-                         'http://boom.com/logo.svg')
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/logo.svg')
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_apple_touch_icon(self):
+        html = '<link rel="apple-touch-icon" sizes="152x152" href="/t/assets/icons/apple-touch-icon-152x152.png">'
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/t/assets/icons/apple-touch-icon-152x152.png')
+
+    def test_apple_touch_icon_precomposed(self):
+        html = '<link rel="apple-touch-icon-precomposed" href="/t/assets/icons/w-logo-orange.png">'
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/t/assets/icons/w-logo-orange.png')
+
+    def test_multiple_finds(self):
+        html = ('<link rel="apple-touch-icon" sizes="152x152" href="/t/assets/icons/apple-touch-icon-152x152.png">'
+                '< link rel="apple-touch-icon-precomposed" href="/t/assets/icons/w-logo-orange.png" >'
+                )
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/t/assets/icons/apple-touch-icon-152x152.png')

@@ -8,3 +8,5 @@ src/.cache/
 *.swp
 .cache/
 .sentry_dsn
+.mypy_cache/
+env
