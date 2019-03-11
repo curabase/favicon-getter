@@ -17,16 +17,11 @@ script to curl those domains to the favicon API
 
 # API Endpoints
 
-There is only one endpoint. `domain.com/?domain=example.com`
+There is only one endpoint. `http://localhost:8000/?url=example.com`
 
 ## Parameters
 
-  - domain: the domain name (eg - facebook.com)
-  - favicon: this is a full path url (eg - http://example.com/favicon.ico) to
-    an alternative favicon. This is useful if you absolutely cannot get the script
-    to find the right favicon. 
-
-To refresh a domain: `curl http://localhost:5000/?domain=facebook.com&refresh=true`
+  - url: the url of the web page you want the favicon from
 
 
 # Getting started (development)
@@ -34,14 +29,29 @@ To refresh a domain: `curl http://localhost:5000/?domain=facebook.com&refresh=tr
 This is a really simple app to get started with.
 
   1. `git clone git@bitbucket.org:bkmk/favicon-getter.git`
-  1. `make run` to run production version with gunicorn
-  1. `make run-debug` to run development
+  1. `make run-prod` to run production version with gunicorn
+
+Personally, I like JetBrain's PyCharm Professional to work in a
+full debugged environment. 
 
 # Deploying to production
 
-You should be able to deploy using many methods. Personally, I use a home-grown
-'push-to-deploy' -- kind of like Heroku.
+I just run it as a docker container behind a reverse proxy like
+traefik.
 
+
+Below is an excerpt from the `Makefile`
+```
+$ docker container run \
+		--name favicon \
+		--hostname favicon \
+		--env-file env \
+		--label-file labels \
+		--network web \
+		--restart always \
+		-d \
+		favicon:$(RELEASE)
+```
 # Other favicon grabbers
 
   - [pyfav](https://github.com/phillipsm/pyfav): a simple Python library that helps you get a favicon for a supplied URL.

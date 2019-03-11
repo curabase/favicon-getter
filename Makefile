@@ -22,7 +22,7 @@ prod-deploy: push ## deploy directly to production
 	ssh deploy@prod.m3b "cd /home/deploy/deployment/containers/favicon && make deploy RELEASE=$(TAG)"
 
 .PHONY: run-prod
-run-prod:
+run-prod: build
 	docker run -it \
 		--rm \
 		-p 8080:8000 \
