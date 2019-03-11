@@ -9,3 +9,4 @@ src/.cache/
 .sentry_dsn
 .mypy_cache/
 env
+**/icons/*.png
