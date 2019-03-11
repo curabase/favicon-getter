@@ -141,7 +141,7 @@ class FavIcon(object):
 
         # if we were redirected off the domain, then we catch it here
         new_domain_parts = urlparse(r.url)
-        new_domain = new_domain_parts.netloc
+        new_domain = new_domain_parts.netloc.split(':')[0].lower()
 
         # now we just re-check favicons on the new domain
         if self.domain != new_domain:
@@ -205,7 +205,7 @@ class FavIcon(object):
         bytes = BytesIO(data)
         the_magic = from_buffer(bytes.read())
 
-        if any([m in the_magic for m in ['icon', 'PNG', 'GIF', 'JPEG', 'SVG']]):
+        if any([m in the_magic for m in ['icon', 'PNG', 'GIF', 'JPEG', 'SVG', 'PC bitmap']]):
             return True
 
         # TODO: detect if all pixels are white or transparent
@@ -232,6 +232,7 @@ class FavIcon(object):
         except FavIconException as e:
             self.log_error(e)
             image = make_image(self.domain)
+            return BytesIO(image)
 
         try:
             favicon_url = self.find_in_html(html)
@@ -247,8 +248,8 @@ class FavIcon(object):
             self.log_error(e)
             image = make_image(self.domain)
 
-        # with open(self.filename, 'wb') as f:
-        #     f.write(image)
+        with open(self.filename, 'wb') as f:
+            f.write(image)
 
         # wrap data in BytesIO and send it out
         return BytesIO(image)
