@@ -7,13 +7,16 @@ import cairosvg
 from io import BytesIO
 
 from magic import from_buffer
-import os
+import os, sys
 import logging
 
 from typing import Union, List
 
 from requests import HTTPError
 
+
+fmt = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s'.format(os.getenv('IMAGE_VERSION'))
+logging.basicConfig(format=fmt, stream=sys.stdout, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 """
@@ -128,7 +131,7 @@ class FavIcon(object):
         return image
 
     def log_error(self, message):
-        log.error(message)
+        log.debug(message)
         self.errors.append(message)
 
     def fetch_html(self) -> str:
@@ -148,7 +151,6 @@ class FavIcon(object):
             log.debug(f'Switching domains. {self.domain} -> {new_domain}')
             self.url = r.url
             self._process_meta()
-            return self.fetch_html()
 
         return r.text
 
