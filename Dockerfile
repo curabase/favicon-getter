@@ -18,7 +18,7 @@ RUN apt-get update && \
             shared-mime-info
 
 COPY requirements.txt /requirements.txt
-RUN pip install -r --no-cache-dir /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
 
 RUN mkdir -p /app
 COPY src /app

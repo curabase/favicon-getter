@@ -10,9 +10,14 @@ help:
 .PHONY: build
 build: ## Build the curabase services
 	docker build --build-arg IMAGE_VERSION=$(TAG) -t favicon -t favicon:$(TAG) .
+	docker tag favicon:$(TAG) curabase/favicon:$(TAG)
+
+.PHONY: push
+push: build
+	#docker push curabase/favicon:$(TAG)
 
 .PHONY: prod-deploy
-prod-deploy: build ## deploy directly to production
+prod-deploy: push ## deploy directly to production
 	docker save favicon:$(TAG) | bzip2 | pv| ssh prod.m3b 'bunzip2 | docker load'
 	ssh deploy@prod.m3b "cd /home/deploy/deployment/containers/favicon && make deploy RELEASE=$(TAG)"
 

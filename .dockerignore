@@ -8,3 +8,5 @@ __pycache__
 .sentry_dsn
 src/icons/
 icons/
+.mypycache/
+.pytest_cache/
