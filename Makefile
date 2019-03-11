@@ -28,3 +28,7 @@ run-prod:
 clean:
 	find src/ -type f -name *.pyc -delete
 	find src/ -type d -name __pycache__ -exec rm -rf {} \;
+
+.PHONY: mypy
+mypy:
+	source venv/bin/activate && mypy  --ignore-missing-imports src

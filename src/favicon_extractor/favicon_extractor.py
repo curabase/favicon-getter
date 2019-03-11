@@ -64,19 +64,14 @@ class FavIcon(object):
             raise FavIconException('url cannot be None')
 
         self.url = url
-
-        url_parts = urlparse(url)
-
-        scheme = url_parts.scheme.lower()
-        self.domain = url_parts.netloc.split(':')[0].lower()
-        self.base_url = f"{scheme}://{url_parts.netloc}"
+        self._process_meta()
 
         if len(self.domain) == 0:
             raise FavIconException('Missing domain')
 
-        if scheme in self.SCHEMES:
+        if self.scheme in self.SCHEMES:
             b = os.path.dirname(os.path.realpath(__file__))
-            self.filename = f"{b}/assets/images/{scheme}.png"
+            self.filename = f"{b}/assets/images/{self.scheme}.png"
         elif self.domain in self.LOCALHOSTS:
             b = os.path.dirname(os.path.realpath(__file__))
             self.filename = f"{b}/assets/images/localhost.png"
@@ -86,6 +81,14 @@ class FavIcon(object):
         # check if we already have the file
         if os.path.isfile(self.filename):
             self.presaved = True
+
+    def _process_meta(self):
+        url_parts = urlparse(self.url)
+        self.scheme = url_parts.scheme.lower()
+        self.domain = url_parts.netloc.split(':')[0].lower()
+        self.base_url = f"{self.scheme}://{url_parts.netloc}"
+
+
 
     def download_remote_favicon(self, favicon_url: str) -> bytes:
 
@@ -135,6 +138,17 @@ class FavIcon(object):
 
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             raise FavIconException(e)
+
+        # if we were redirected off the domain, then we catch it here
+        new_domain_parts = urlparse(r.url)
+        new_domain = new_domain_parts.netloc
+
+        # now we just re-check favicons on the new domain
+        if self.domain != new_domain:
+            log.debug(f'Switching domains. {self.domain} -> {new_domain}')
+            self.url = r.url
+            self._process_meta()
+            return self.fetch_html()
 
         return r.text
 
@@ -238,7 +252,6 @@ class FavIcon(object):
 
         # wrap data in BytesIO and send it out
         return BytesIO(image)
-
 
 def common_locations(domain: str) -> List[str]:
     """

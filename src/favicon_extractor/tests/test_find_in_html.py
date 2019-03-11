@@ -82,3 +82,8 @@ class TestFindInHtml(unittest.TestCase):
                 )
         url = self.favicon.find_in_html(html)
         self.assertEqual(url, 'http://example.com/t/assets/icons/apple-touch-icon-152x152.png')
+
+    def test_params_in_url(self):
+        html = '<link href="/static/favicon.ico?v=2" rel="shortcut icon">'
+        url = self.favicon.find_in_html(html)
+        self.assertEqual(url, 'http://example.com/static/favicon.ico?v=2')
