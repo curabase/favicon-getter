@@ -4,7 +4,7 @@ Flask==1.0.2
 gunicorn==19.9.0
 html5lib==1.0.1
 itsdangerous==0.24
-Pillow==4.3.0
+Pillow==6.2.0
 python-magic==0.4.15
 requests
 sentry-sdk[flask]==0.7.2
