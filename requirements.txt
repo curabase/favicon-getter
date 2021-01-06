@@ -9,6 +9,6 @@ python-magic==0.4.15
 requests
 sentry-sdk[flask]==0.7.2
 python-datauri==0.2.5
-CairoSVG==2.1.2
+CairoSVG==2.5.1
 python-dotenv
 mypy
