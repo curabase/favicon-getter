@@ -10,3 +10,10 @@ src/icons/
 icons/
 .mypycache/
 .pytest_cache/
+venv/
+src/favicon_extractor/.mypy_cache
+Makefile.sample
+Makefile
+env
+env.prod
+docker-compose.prod.yml

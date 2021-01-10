@@ -1,0 +1,31 @@
+IMAGE:=favicon
+TAG:=$(shell date "+%Y%m%d%H%M")
+HOST:=example.com
+
+###############################################################################
+# HELP / DEFAULT COMMAND
+###############################################################################
+.PHONY: help
+help:
+	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+.PHONY: build
+build: ## Build the curabase services
+	docker build --build-arg IMAGE_VERSION=$(TAG) -t $(IMAGE) -t $(IMAGE):$(TAG) .
+
+.PHONY: prod-build
+prod-build: ## Build the screenshots services remotely
+	docker -H ssh://$(HOST) build --build-arg IMAGE_VERSION=$(TAG) -t $(IMAGE) -t $(IMAGE):$(TAG) -t $(IMAGE):latest .
+
+.PHONY: prod-deploy
+prod-deploy: prod-build ## deploy directly to production
+    docker-compose -H ssh://$(HOST) --env-file env.prod up -d
+
+.PHONY: clean
+clean:
+	find src/ -type f -name *.pyc -delete
+	find src/ -type d -name __pycache__ -exec rm -rf {} \;
+
+.PHONY: mypy
+mypy:
+	source venv/bin/activate && mypy  --ignore-missing-imports src

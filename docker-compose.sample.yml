@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+
+  favicon:
+    image: favicon
+    container_name: favicon
+    restart: unless-stopped
+
+     # optional traefik config that I use. No support, but you can see how I do it. :-)
+#    labels:
+#      - traefik.http.routers.favicon.rule=Host(`${HOSTNAME}`)
+#      - traefik.http.routers.favicon.tls=true
+#      - traefik.http.routers.favicon.tls.certresolver=le
+#      - traefik.http.services.favicon.loadbalancer.server.port=8000
+#      - traefik.http.middlewares.gzip.compress=true¬
+
+#      - traefik.http.routers.favicon.middlewares=gzip@docker

@@ -9,4 +9,7 @@ src/.cache/
 .sentry_dsn
 .mypy_cache/
 env
+env.prod
 **/icons/*.png
+Makefile
+docker-compose.prod.yml

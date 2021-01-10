@@ -29,29 +29,20 @@ There is only one endpoint. `http://localhost:8000/?url=example.com`
 This is a really simple app to get started with.
 
   1. `git clone git@bitbucket.org:bkmk/favicon-getter.git`
-  1. `make run-prod` to run production version with gunicorn
+  1. `cp docker-compose.sample.yml docker-compose.yml`
+  1. `cp Makefile.sample Makefile`
+  1. `cp env.sample env env.prod` (one for local and prod if that is your thing)
+  1. edit HOST in Makefile of your live endpoint
+  1. check the `docker-compose.yml` settings (I have some traefik stuff in there) 
+
 
 Personally, I like JetBrain's PyCharm Professional to work in a
 full debugged environment. 
 
 # Deploying to production
 
-I just run it as a docker container behind a reverse proxy like
-traefik.
+I use `docker-compose`. See the samples.
 
-
-Below is an excerpt from the `Makefile`
-```
-$ docker container run \
-		--name favicon \
-		--hostname favicon \
-		--env-file env \
-		--label-file labels \
-		--network web \
-		--restart always \
-		-d \
-		favicon:$(RELEASE)
-```
 # Other favicon grabbers
 
   - [pyfav](https://github.com/phillipsm/pyfav): a simple Python library that helps you get a favicon for a supplied URL.
