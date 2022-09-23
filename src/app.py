@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Optional, Any
-
+from typing import Optional
 from flask import Flask, send_file, request, make_response
-from .favicon_extractor import FavIcon, FavIconException
+from favicon_extractor import FavIcon, FavIconException
 import os
 import sys
 import logging
