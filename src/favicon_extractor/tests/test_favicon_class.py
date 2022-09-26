@@ -1,5 +1,5 @@
 from unittest import TestCase
-from ..favicon_extractor import FavIcon, FavIconException
+from favicon_extractor import FavIcon, FavIconException
 from io import BytesIO
 from datauri import DataURI
 from unittest.mock import patch
@@ -50,7 +50,7 @@ class TestFavIconGetFavicon(TestCase):
 
     def test_get_preexisting_icon(self):
 
-        f = FavIcon('http://google.com', base_dir=self.base_dir)
+        f = FavIcon('https://google.com', base_dir=self.base_dir)
         icon = f.get_favicon()
         self.assertTrue(f.presaved)
         self.assertIsInstance(icon, BytesIO)

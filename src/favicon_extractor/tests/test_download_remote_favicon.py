@@ -1,5 +1,5 @@
 import unittest
-from ..favicon_extractor import FavIcon, FavIconException
+from favicon_extractor import FavIcon, FavIconException
 from io import BytesIO
 from datauri import DataURI
 from unittest.mock import patch

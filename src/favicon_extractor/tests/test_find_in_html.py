@@ -1,5 +1,5 @@
 import unittest
-from ..favicon_extractor import FavIcon, FavIconException
+from favicon_extractor import FavIcon, FavIconException
 
 base_url = 'http://example.com'
 

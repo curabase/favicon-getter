@@ -1,5 +1,5 @@
 import unittest
-from ..favicon_extractor import FavIcon, FavIconException
+from favicon_extractor.favicon_extractor import is_bytes_valid_favicon
 from io import BytesIO
 from datauri import DataURI
 import os
@@ -12,19 +12,19 @@ DATA_URI = 'data:image/vnd.microsoft.icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACg
 class TestIsBytesValidFavicon(unittest.TestCase):
 
     def setUp(self):
-        self.favicon = FavIcon('http://example.com')
+        pass
 
     def test_data_not_type_bytesio(self):
 
         with self.assertRaises(TypeError):
-            self.favicon.is_bytes_valid_favicon()
+            is_bytes_valid_favicon()
 
 
     def test_data_uri_is_valid(self):
         data = DataURI(DATA_URI).data
-        self.assertTrue(self.favicon.is_bytes_valid_favicon(data))
+        self.assertTrue(is_bytes_valid_favicon(data))
 
     def test_empty_file_is_invalid(self):
         with open(f'{BASE_DIR}/fixtures/invalid_favicon_empty_file.png', 'rb') as f:
             data = f.read()
-        self.assertFalse(self.favicon.is_bytes_valid_favicon(data))
+        self.assertFalse(is_bytes_valid_favicon(data))
