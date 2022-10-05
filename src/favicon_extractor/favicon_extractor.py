@@ -1,3 +1,4 @@
+"""Define class and exception for the Favicon extractor."""
 import logging
 import os
 import sys
@@ -12,7 +13,6 @@ from bs4 import BeautifulSoup
 from datauri import DataURI
 from magic import from_buffer
 from PIL import Image, ImageDraw, ImageFont
-
 
 fmt = '%(asctime)s:%(levelname)s:favicon-{}:%(message)s'.format(
     os.getenv('IMAGE_VERSION'),
@@ -48,10 +48,13 @@ SCHEMES_NON_HTTP = ('ssh', 'telnet')
 
 
 class FavIconException(Exception):
+    """Custom exception related to Favicons."""
+
     pass
 
 
 class FavIcon(object):
+    """The Favicon class that will search and download favicons."""
 
     errors: List = []
 
@@ -75,9 +78,14 @@ class FavIcon(object):
             raise FavIconException('Missing domain')
 
         if self.scheme in SCHEMES_NON_HTTP:
-            self.filename = '{0}/assets/images/{1}.png'.format(self.base_dir, self.scheme)
+            self.filename = '{0}/assets/images/{1}.png'.format(
+                self.base_dir,
+                self.scheme,
+            )
         elif self.domain in LOCALHOSTS:
-            self.filename = '{0}/assets/images/localhost.png'.format(self.base_dir)
+            self.filename = '{0}/assets/images/localhost.png'.format(
+                self.base_dir,
+            )
         else:
             self.filename = '{0}/{1}.png'.format(self.media_dir, self.domain)
 
@@ -90,67 +98,6 @@ class FavIcon(object):
         self.scheme = url_parts.scheme.lower()
         self.domain = url_parts.netloc.split(':')[0].lower()
         self.base_url = '{0}://{1}'.format(self.scheme, url_parts.netloc)
-
-    def download_remote_favicon(
-        self,
-        favicon_url: str,
-        verify_ssl: bool = False,
-    ) -> bytes:
-        """
-        Attempt to download the remote image.
-
-        :param favicon_url: The target URL to download
-        :param verify_ssl: Determine if we should validate SSL of server.
-        :return: Bytes representation of the image
-        """
-        if favicon_url.startswith('data:image'):
-            return DataURI(favicon_url).data
-
-        try:
-            # need to set headers here to fool sites like cafepress.com...
-            h = requests.get(
-                favicon_url,
-                allow_redirects=True,
-                timeout=TIMEOUT,
-                headers=HEADERS,
-                verify=verify_ssl,
-            )
-        except (
-            requests.exceptions.Timeout,
-            requests.exceptions.ConnectionError,
-            requests.exceptions.InvalidSchema,
-            requests.exceptions.MissingSchema,
-            requests.exceptions.InvalidURL,
-        ) as e:
-            raise FavIconException(e)
-
-        try:
-            h.raise_for_status()
-        except requests.HTTPError:
-            raise FavIconException(
-                'HTTP Error on favicon url: {0}'.format(favicon_url),
-            )
-
-        if not h.content:
-            raise FavIconException(
-                'download_remove_favicon: ' +
-                'Zero Length favicon: {0}'.format(favicon_url),
-            )
-
-        # is the returning file SVG?
-        # If so, we have to convert it to bitmap (png)
-        if 'SVG' in from_buffer(h.content) or favicon_url.endswith('.svg'):
-            image = cairosvg.svg2png(bytestring=h.content)
-        else:
-            image = h.content
-
-        if not is_bytes_valid_favicon(image):
-            raise FavIconException(
-                'Download_remove_favicon: Icon was ' +
-                'not valid image: {0}'.format(favicon_url),
-            )
-
-        return image
 
     def log_error(self, message):
         """Log the errors."""
@@ -165,7 +112,7 @@ class FavIcon(object):
         :return: HTML body of the response
         """
         try:
-            # set the user agent to fool economist.com and other sites who care.
+            # set user agent to fool economist.com and other sites who care.
             r = requests.get(
                 self.url,
                 timeout=TIMEOUT,
@@ -176,8 +123,8 @@ class FavIcon(object):
         except (
             requests.exceptions.Timeout,
             requests.exceptions.ConnectionError,
-        ) as e:
-            raise FavIconException(e)
+        ) as request_exception:
+            raise FavIconException(request_exception)
 
         # if we were redirected off the domain, then we catch it here
         new_domain_parts = urlparse(r.url)
@@ -195,13 +142,17 @@ class FavIcon(object):
 
         return r.text
 
-    def find_in_html(self, html: str) -> str:
+    def find_in_html(self, html: str, fallback_url: str = None) -> str:
         """
         Look for a favicon (or apple touch icon) in html strings.
 
         :param html: The HTML string (often entire page source)
+        :param fallback_url: Return a default URL in case we cannot find one
         :return: a string URL of the favicon location or data-uri
         """
+        if not fallback_url:
+            raise FavIconException('fallback_url is required')
+
         soup = BeautifulSoup(html, 'html5lib')
 
         # find the first available link to an icon we can download
@@ -211,9 +162,7 @@ class FavIcon(object):
         )
 
         if not target:
-            raise FavIconException(
-                'Could not find suitable link for favicon extraction',
-            )
+            return fallback_url
 
         href = target.get('href', '')
 
@@ -226,7 +175,6 @@ class FavIcon(object):
         :param href: String representation of the url/link.
         :return:
         """
-
         if not href:
             raise FavIconException('href is required as param')
 
@@ -256,27 +204,25 @@ class FavIcon(object):
 
         try:
             html = self.fetch_html()
-        except FavIconException as e:
-            self.log_error(e)
-            image = make_image(self.domain)
-            return BytesIO(image)
+        except FavIconException as fetch_exception:
+            self.log_error(fetch_exception)
+            return BytesIO(make_image(self.domain))
+
+        favicon_url = self.find_in_html(
+            html,
+            fallback_url='{0}/favicon.ico'.format(self.base_url),
+        )
 
         try:
-            favicon_url = self.find_in_html(html)
-        except FavIconException as e:
-            self.log_error(e)
-            favicon_url = '{0}/favicon.ico'.format(self.base_url)
-
-        try:
-            raw_image = self.download_remote_favicon(favicon_url)
+            raw_image = download_remote_favicon(favicon_url)
         except FavIconException as e:
             self.log_error(e)
             image = make_image(self.domain)
         else:
             image = resize_image(raw_image)
 
-        with open(self.filename, 'wb') as f:
-            f.write(image)
+        with open(self.filename, 'wb') as favicon_file:
+            favicon_file.write(image)
 
         # wrap data in BytesIO and send it out
         return BytesIO(image)
@@ -289,7 +235,6 @@ def common_locations(domain: str) -> List[str]:
     :param domain: just the base domain name (example.com)
     :return: a list of urls
     """
-    # extensions = ['ico','png','gif','jpg','jpeg']
     subdomains = ['']
     locations = []
 
@@ -298,7 +243,12 @@ def common_locations(domain: str) -> List[str]:
     for ext in EXTENSIONS:
         for scheme in SCHEMES_HTTP:
             for subdomain in subdomains:
-                url = f'{scheme}://{subdomain}{domain}/favicon.{ext}'
+                url = '{0}://{1}{2}/favicon.{3}'.format(
+                    scheme,
+                    subdomain,
+                    domain,
+                    ext,
+                )
                 locations.append(url)
 
     return locations
@@ -311,16 +261,18 @@ def make_image(domain: str) -> bytes:
     :param domain:
     :return:
     """
-    letter = domain[0].upper()
-
     font = ImageFont.truetype(
         '{0}/assets/fonts/DejaVuSansMono-webfont.ttf'.format(BASE_DIR),
         24,
     )
     img = Image.new('RGBA', (32, 32), (128, 128, 128))
     draw = ImageDraw.Draw(img)
-    color = (255, 255, 255)
-    draw.text((8, 1), letter, color, font=font)
+    draw.text(
+        xy=(8, 1),
+        text=domain[0].upper(),
+        fill=(255, 255, 255),
+        font=font,
+    )
 
     out = BytesIO()
 
@@ -352,7 +304,7 @@ def is_bytes_valid_favicon(img_data: bytes) -> bool:
     Check if the bytes are valid icons.
 
     :param img_data: Bytes object with image date
-    :return: Boolean / yes it is a valid icon. No otherwise.
+    :return: Boolean / yes it is a valid icon, no otherwise.
     """
     file_bytes = BytesIO(img_data)
     the_magic = from_buffer(file_bytes.read())
@@ -366,3 +318,60 @@ def is_bytes_valid_favicon(img_data: bytes) -> bool:
     # http://stackoverflow.com/a/14041871/1646663
 
     return False
+
+
+def download_remote_favicon(url: str, verify_ssl: bool = False) -> bytes:
+    """
+    Attempt to download the remote image.
+
+    :param url: The target URL to download
+    :param verify_ssl: Determine if we should validate SSL of server.
+    :return: Bytes representation of the image
+    """
+    if url.startswith('data:image'):
+        return DataURI(url).data
+
+    try:
+        # need to set headers here to fool sites like cafepress.com...
+        h = requests.get(
+            url,
+            allow_redirects=True,
+            timeout=TIMEOUT,
+            headers=HEADERS,
+            verify=verify_ssl,
+        )
+    except (
+        requests.exceptions.Timeout,
+        requests.exceptions.ConnectionError,
+        requests.exceptions.InvalidSchema,
+        requests.exceptions.MissingSchema,
+        requests.exceptions.InvalidURL,
+    ) as request_exception:
+        raise FavIconException(request_exception)
+
+    try:
+        h.raise_for_status()
+    except requests.HTTPError:
+        raise FavIconException(
+            'HTTP Error on favicon url: {0}'.format(url),
+        )
+
+    if not h.content:
+        raise FavIconException(
+            'download_remove_favicon: ' +
+            'Zero Length favicon: {0}'.format(url),
+        )
+
+    # is the returning file SVG?
+    # If so, we have to convert it to bitmap (png)
+    if 'SVG' in from_buffer(h.content) or url.endswith('.svg'):
+        image = cairosvg.svg2png(bytestring=h.content)
+    else:
+        image = h.content
+
+    if not is_bytes_valid_favicon(image):
+        raise FavIconException(
+            'Icon was not valid image: {0}'.format(url),
+        )
+
+    return image

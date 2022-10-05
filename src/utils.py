@@ -1,3 +1,4 @@
+"""Various utilities for validating input and generating placeholders."""
 import logging
 import os
 import socket

@@ -1,9 +1,11 @@
 import unittest
-from favicon_extractor import FavIcon, FavIconException
-from io import BytesIO
+from favicon_extractor.favicon_extractor import (
+    FavIcon,
+    FavIconException,
+    download_remote_favicon,
+)
 from datauri import DataURI
 from unittest.mock import patch
-from magic import from_buffer
 import os
 
 
@@ -18,12 +20,12 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
     def test_url_is_empty(self):
         url = ''
         with self.assertRaises(FavIconException):
-            self.favicon.download_remote_favicon(url)
+            download_remote_favicon(url)
 
     def test_url_missing_http(self):
         url = '//example.com/favicon.ico'
         with self.assertRaises(FavIconException):
-            self.favicon.download_remote_favicon(url)
+            download_remote_favicon(url)
 
     def test_url_is_malformed(self):
         urls = [
@@ -35,7 +37,7 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
         for u in urls:
             url = u
             with self.assertRaises(FavIconException):
-                self.favicon.download_remote_favicon(url)
+                download_remote_favicon(url)
 
     def test_url_is_valid_but_response_is_404(self):
 
@@ -43,7 +45,7 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
 
         # mock the response
         with self.assertRaises(FavIconException):
-            self.favicon.download_remote_favicon(url)
+            download_remote_favicon(url)
 
     def test_url_is_valid_but_response_content_is_empty(self):
 
@@ -54,7 +56,7 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
             m.return_value.content = b''
             m.return_value.status_code = 200
             with self.assertRaises(FavIconException):
-                self.favicon.download_remote_favicon(url)
+                download_remote_favicon(url)
 
     def test_url_is_valid(self):
         url = 'http://example.com.com/favicon.ico'
@@ -64,7 +66,7 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
             content = DataURI(DATA_URI).data
             m.return_value.content = content
             m.return_value.status_code = 200
-            image = self.favicon.download_remote_favicon(url)
+            image = download_remote_favicon(url)
             self.assertEqual(image, content)
 
     def test_svg_is_converted_properly(self):
@@ -78,5 +80,5 @@ class TestDownloadRemoteFavicon(unittest.TestCase):
         with patch('requests.get') as m:
             m.return_value.content = content
             m.return_value.status_code = 200
-            image = self.favicon.download_remote_favicon(url)
+            image = download_remote_favicon(url)
             self.assertIn(b'PNG', image)
