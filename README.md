@@ -1,3 +1,11 @@
+# No longer maintained
+
+This was a fun experiment, and I used it for a long time on some side 
+projects. But the time has come to put this into archive mode and
+call it a day.
+
+There is a good one available here: https://github.com/mat/besticon
+
 # About this project
 
 I often build dashboards and consoles that link to outside websites, 
